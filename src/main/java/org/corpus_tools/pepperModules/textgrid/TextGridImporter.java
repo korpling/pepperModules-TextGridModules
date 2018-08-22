@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.corpus_tools.pepper.common.DOCUMENT_STATUS;
 import org.corpus_tools.pepper.common.PepperConfiguration;
@@ -151,21 +152,29 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 		}
 		
 		private Map<Integer, Double> mapTimeline(TextGrid grid) {
-			SMedialDS mediaSource = SaltFactory.createSMedialDS();
-			getDocument().getDocumentGraph().addNode(mediaSource);
 			
-			// iterate over text tier to create the points of time for the timeline
-			STimeline timeline = getDocument().getDocumentGraph().createTimeline();
-			Map<Integer, Double> pot2time = new LinkedHashMap<>();
+			// iterate over all tiers to find the points of time for the timeline and sort them
+			TreeSet<Double> pots = new TreeSet<>();
 			for(PraatObject gridObject : grid) {
 				if(gridObject instanceof TextTier) {
 					TextTier textTier = (TextTier) gridObject;
-					ListIterator<Point> itPoints = textTier.iterator();
-					while(itPoints.hasNext()) {
-						timeline.increasePointOfTime();
-						pot2time.put(timeline.getEnd(), itPoints.next().getTime());
+					for(Point p : textTier){
+						pots.add(p.getTime());
+					}
+				} else if(gridObject instanceof IntervalTier) {
+					IntervalTier tier = (IntervalTier) gridObject;
+					for(Interval i : tier) {
+						// add both times
+						pots.add(i.getStartTime());
+						pots.add(i.getEndTime());
 					}
 				}
+			}
+			STimeline timeline = getDocument().getDocumentGraph().createTimeline();
+			Map<Integer, Double> pot2time = new LinkedHashMap<>();
+			for(double timePoint : pots) {
+				timeline.increasePointOfTime();
+				pot2time.put(timeline.getEnd(), timePoint);
 			}
 			return pot2time;
 		}
@@ -187,9 +196,9 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 						
 						ListIterator<Interval> intervals = tier.iterator();
 						while(intervals.hasNext()) {
-							Interval i = intervals.next();
+							Interval tokInterval = intervals.next();
 							int tokStart = text.length();
-							text.append(i.getText());
+							text.append(tokInterval.getText());
 							int tokEnd  = text.length();
 							if(intervals.hasNext()) {
 								text.append(' ');
@@ -201,13 +210,32 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 							SMedialRelation mediaRel = SaltFactory.createSMedialRelation();
 							mediaRel.setSource(tok);
 							mediaRel.setTarget(mediaFile);
-							mediaRel.setStart(i.getStartTime());
-							mediaRel.setEnd(i.getEndTime());
+							mediaRel.setStart(tokInterval.getStartTime());
+							mediaRel.setEnd(tokInterval.getEndTime());
 							
 							getDocument().getDocumentGraph().addRelation(mediaRel);
 
 						}
 						primaryText.setText(text.toString());
+					}		
+				}
+			}
+		}
+		
+		private void mapSpans(TextGrid grid, Map<Integer, Double> pot2time) {
+			Set<String> primTiers = getProperties().getPrimaryText();
+			
+			
+			for(PraatObject gridObject : grid) {
+				if(gridObject instanceof IntervalTier) {
+					IntervalTier tier = (IntervalTier) gridObject;
+					
+					if(!primTiers.contains(tier.getName())) {
+						ListIterator<Interval> intervals = tier.iterator();
+						while(intervals.hasNext()) {
+							Interval spanInterval = intervals.next();
+
+						}
 					}		
 				}
 			}
@@ -253,6 +281,7 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 					
 					Map<Integer, Double> pot2time = mapTimeline(grid);
 					mapTokens(grid);
+					mapSpans(grid, pot2time);
 					
 
 				}
