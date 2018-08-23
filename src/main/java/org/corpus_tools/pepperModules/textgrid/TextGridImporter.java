@@ -341,7 +341,7 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 					File originalFile = new File(getResourceURI().toFileString());
 					File mediaFile = new File(originalFile.getParent(),
 							Files.getNameWithoutExtension(originalFile.getPath()) + audioExt);
-					mediaFileDS.setMediaReference(URI.createFileURI(mediaFile.getPath()));
+					mediaFileDS.setMediaReference(URI.createFileURI(mediaFile.getAbsolutePath()));
 					
 					getDocument().getDocumentGraph().addNode(mediaFileDS);
 

@@ -50,6 +50,6 @@ public class TextGridImporterProperties extends PepperModuleProperties {
 	}
 	
 	public String getAudioExtension() {
-		return getProperty(PROP_AUDIO_EXTENSION).toString();
+		return (String) getProperty(PROP_AUDIO_EXTENSION).getValue();
 	}
 }
