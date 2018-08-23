@@ -1,5 +1,5 @@
 Manifest-Version: 1.0
-Bnd-LastModified: 1534947426458
+Bnd-LastModified: 1535035146000
 Build-Jdk: 10.0.2
 Built-By: thomas
 Bundle-Description: Provides shared POM-data.
@@ -15,17 +15,18 @@ Created-By: Apache Maven Bundle Plugin
 Export-Package: org.praat;version="1.0.0.SNAPSHOT",org.corpus_tools.pepp
  erModules.textgrid;uses:="org.corpus_tools.pepper.common,org.corpus_too
  ls.pepper.impl,org.corpus_tools.pepper.modules,org.corpus_tools.pepper.
- modules.exceptions,org.corpus_tools.salt.common,org.corpus_tools.salt.g
- raph,org.eclipse.emf.common.util";version="1.0.0.SNAPSHOT"
+ modules.exceptions,org.corpus_tools.salt.graph,org.eclipse.emf.common.u
+ til";version="1.0.0.SNAPSHOT"
 Import-Package: com.google.common.base;version="[19.0,20)",com.google.co
  mmon.collect;version="[19.0,20)",com.google.common.io;version="[19.0,20
- )",org.corpus_tools.pepper.common;version="[3.1,4)",org.corpus_tools.pe
- pper.impl;version="[3.1,4)",org.corpus_tools.pepper.modules;version="[3
- .1,4)",org.corpus_tools.pepper.modules.exceptions;version="[3.1,4)",org
- .corpus_tools.salt;version="[3.3,4)",org.corpus_tools.salt.common;versi
- on="[3.3,4)",org.corpus_tools.salt.core;version="[3.3,4)",org.corpus_to
- ols.salt.graph;version="[3.3,4)",org.corpus_tools.salt.util;version="[3
- .3,4)",org.eclipse.emf.common.util,org.slf4j;version="[1.7,2)"
+ )",jregex,org.apache.commons.lang3;version="[3.4,4)",org.corpus_tools.p
+ epper.common;version="[3.1,4)",org.corpus_tools.pepper.impl;version="[3
+ .1,4)",org.corpus_tools.pepper.modules;version="[3.1,4)",org.corpus_too
+ ls.pepper.modules.exceptions;version="[3.1,4)",org.corpus_tools.salt;ve
+ rsion="[3.3,4)",org.corpus_tools.salt.common;version="[3.3,4)",org.corp
+ us_tools.salt.core;version="[3.3,4)",org.corpus_tools.salt.graph;versio
+ n="[3.3,4)",org.corpus_tools.salt.util;version="[3.3,4)",org.eclipse.em
+ f.common.util,org.slf4j;version="[1.7,2)"
 META-INF: /home/thomas/src/pepperModules/TextGridModules/META-INF
 OSGI-INF: OSGI-INF
 Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.7))"
