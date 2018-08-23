@@ -29,6 +29,7 @@ import org.corpus_tools.salt.common.SMedialRelation;
 import org.corpus_tools.salt.common.SSpan;
 import org.corpus_tools.salt.common.STextualDS;
 import org.corpus_tools.salt.common.STimeline;
+import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
 import org.corpus_tools.salt.graph.Identifier;
 import org.corpus_tools.salt.util.DataSourceSequence;
@@ -213,6 +214,7 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 
 							SToken tok = getDocument().getDocumentGraph().createToken(primaryText, tokStart, tokEnd);
 
+							// map time of interval to media file
 							SMedialRelation mediaRel = SaltFactory.createSMedialRelation();
 							mediaRel.setSource(tok);
 							mediaRel.setTarget(mediaFile);
@@ -220,7 +222,24 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 							mediaRel.setEnd(tokInterval.getEndTime());
 
 							getDocument().getDocumentGraph().addRelation(mediaRel);
-
+							
+							// map to point in time on timeline
+							Integer potStart = time2pot.get(tokInterval.getStartTime());
+							Integer potEnd = time2pot.get(tokInterval.getEndTime());
+							if(potStart != null && potEnd != null) {
+								STimelineRelation timeRel = SaltFactory.createSTimelineRelation();
+								timeRel.setSource(tok);
+								timeRel.setTarget(getDocument().getDocumentGraph().getTimeline());
+								timeRel.setStart(potStart);
+								timeRel.setEnd(potEnd);
+								
+								getDocument().getDocumentGraph().addRelation(timeRel);
+							} else {
+								log.warn(
+										"Could not find overlapped point in time for span {}={} with interval {}-{}",
+										tier.getName(), tokInterval.getText(), tokInterval.getStartTime(),
+										tokInterval.getEndTime());
+							}
 						}
 						primaryText.setText(text.toString());
 					}
