@@ -1,7 +1,8 @@
 Manifest-Version: 1.0
-Bnd-LastModified: 1535035146000
-Build-Jdk: 10.0.2
+Bnd-LastModified: 1535036656153
+Build-Jdk: 1.8.0_181
 Built-By: thomas
+Bundle-ClassPath: .,jregex-1.2_01.jar
 Bundle-Description: Provides shared POM-data.
 Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
 Bundle-ManifestVersion: 2
@@ -12,6 +13,9 @@ Bundle-SymbolicName: org.corpus-tools.pepperModules-TextGridModules;sing
 Bundle-Vendor: Humboldt-Universität zu Berlin
 Bundle-Version: 1.0.0.SNAPSHOT
 Created-By: Apache Maven Bundle Plugin
+Embed-Dependency: jregex
+Embedded-Artifacts: jregex-1.2_01.jar;g="net.sourceforge.jregex";a="jreg
+ ex";v="1.2_01"
 Export-Package: org.praat;version="1.0.0.SNAPSHOT",org.corpus_tools.pepp
  erModules.textgrid;uses:="org.corpus_tools.pepper.common,org.corpus_too
  ls.pepper.impl,org.corpus_tools.pepper.modules,org.corpus_tools.pepper.
@@ -19,14 +23,14 @@ Export-Package: org.praat;version="1.0.0.SNAPSHOT",org.corpus_tools.pepp
  til";version="1.0.0.SNAPSHOT"
 Import-Package: com.google.common.base;version="[19.0,20)",com.google.co
  mmon.collect;version="[19.0,20)",com.google.common.io;version="[19.0,20
- )",jregex,org.apache.commons.lang3;version="[3.4,4)",org.corpus_tools.p
- epper.common;version="[3.1,4)",org.corpus_tools.pepper.impl;version="[3
- .1,4)",org.corpus_tools.pepper.modules;version="[3.1,4)",org.corpus_too
- ls.pepper.modules.exceptions;version="[3.1,4)",org.corpus_tools.salt;ve
- rsion="[3.3,4)",org.corpus_tools.salt.common;version="[3.3,4)",org.corp
- us_tools.salt.core;version="[3.3,4)",org.corpus_tools.salt.graph;versio
- n="[3.3,4)",org.corpus_tools.salt.util;version="[3.3,4)",org.eclipse.em
- f.common.util,org.slf4j;version="[1.7,2)"
+ )",org.apache.commons.lang3;version="[3.4,4)",org.corpus_tools.pepper.c
+ ommon;version="[3.1,4)",org.corpus_tools.pepper.impl;version="[3.1,4)",
+ org.corpus_tools.pepper.modules;version="[3.1,4)",org.corpus_tools.pepp
+ er.modules.exceptions;version="[3.1,4)",org.corpus_tools.salt;version="
+ [3.3,4)",org.corpus_tools.salt.common;version="[3.3,4)",org.corpus_tool
+ s.salt.core;version="[3.3,4)",org.corpus_tools.salt.graph;version="[3.3
+ ,4)",org.corpus_tools.salt.util;version="[3.3,4)",org.eclipse.emf.commo
+ n.util,org.slf4j;version="[1.7,2)"
 META-INF: /home/thomas/src/pepperModules/TextGridModules/META-INF
 OSGI-INF: OSGI-INF
 Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.7))"

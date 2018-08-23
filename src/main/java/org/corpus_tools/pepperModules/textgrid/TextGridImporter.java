@@ -112,8 +112,8 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 		setSupplierContact(URI.createURI(PepperConfiguration.EMAIL));
 		setSupplierHomepage(URI.createURI(PepperConfiguration.HOMEPAGE));
 		setDesc("Imports TextGrid files from the Praat tool.");
-		addSupportedFormat("sample", "1.0", null);
-		getDocumentEndings().add(".TextGrid");
+		addSupportedFormat("TextGrid", "1.0", null);
+		getDocumentEndings().add("TextGrid");
 		setProperties(new TextGridImporterProperties());
 	}
 

@@ -20,7 +20,7 @@ public class TextGridImporterProperties extends PepperModuleProperties {
 	public TextGridImporterProperties() {
 		addProperty(new PepperModuleProperty<>(PROP_ANNO_PRIM_REL, String.class,
 				"Defines which primary text tiers are the basis of which annotation tiers, therefor a comma seperated list of primary text tiers, followed by a list of all annotations that refer to the primary tier, is needed. A possible key-value set could be: key='shortAnnoPrimRel', value='primText1={anno1, anno2}, primText2={anno3}' (key: 'annoPrimRel', default is 'null').",
-				null, false));
+				"", false));
 		addProperty(new PepperModuleProperty<>(PROP_AUDIO_EXTENSION, String.class,
 				"Extension of the linked audio files", ".wav"));
 	}
