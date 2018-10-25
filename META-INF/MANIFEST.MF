@@ -1,5 +1,5 @@
 Manifest-Version: 1.0
-Bnd-LastModified: 1535037114627
+Bnd-LastModified: 1540480096473
 Build-Jdk: 1.8.0_181
 Built-By: thomas
 Bundle-ClassPath: .,jregex-1.2_01.jar
@@ -16,11 +16,11 @@ Created-By: Apache Maven Bundle Plugin
 Embed-Dependency: jregex
 Embedded-Artifacts: jregex-1.2_01.jar;g="net.sourceforge.jregex";a="jreg
  ex";v="1.2_01"
-Export-Package: org.praat;version="1.0.0.SNAPSHOT",org.corpus_tools.pepp
- erModules.textgrid;uses:="org.corpus_tools.pepper.common,org.corpus_too
- ls.pepper.impl,org.corpus_tools.pepper.modules,org.corpus_tools.pepper.
- modules.exceptions,org.corpus_tools.salt.graph,org.eclipse.emf.common.u
- til";version="1.0.0.SNAPSHOT"
+Export-Package: org.corpus_tools.pepperModules.textgrid;uses:="org.corpu
+ s_tools.pepper.common,org.corpus_tools.pepper.impl,org.corpus_tools.pep
+ per.modules,org.corpus_tools.pepper.modules.exceptions,org.corpus_tools
+ .salt.graph,org.eclipse.emf.common.util";version="1.0.0.SNAPSHOT",org.p
+ raat;version="1.0.0.SNAPSHOT"
 Import-Package: com.google.common.base;version="[19.0,20)",com.google.co
  mmon.collect;version="[19.0,20)",com.google.common.io;version="[19.0,20
  )",org.apache.commons.lang3;version="[3.4,4)",org.corpus_tools.pepper.c
