@@ -3,6 +3,7 @@ package org.corpus_tools.pepperModules.textgrid;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -190,7 +191,9 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 		}
 
 		private void mapTokens(TextGrid grid, SMedialDS mediaFile, Map<Double, Integer> time2pot) {
-			Set<String> annoTiers = getProperties().getAnnoPrimRel().keySet();
+			Map<String, String> anno2prim = getProperties().getAnnoPrimRel();
+			Set<String> annoTiers = anno2prim.keySet();
+			Set<String> primaryTiers = new HashSet<>(anno2prim.values());
 
 			getDocument().getDocumentGraph().addNode(mediaFile);
 
@@ -198,7 +201,8 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 				if (gridObject instanceof IntervalTier) {
 					IntervalTier tier = (IntervalTier) gridObject;
 
-					if (!annoTiers.contains(tier.getName())) {
+					if (primaryTiers.contains(tier.getName())
+							|| (getProperties().isMapUnknownAsToken() && !annoTiers.contains(tier.getName()))) {
 						StringBuilder text = new StringBuilder();
 						STextualDS primaryText = getDocument().getDocumentGraph().createTextualDS(text.toString());
 						primaryText.setName(tier.getName());
@@ -223,21 +227,20 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 							mediaRel.setEnd(tokInterval.getEndTime());
 
 							getDocument().getDocumentGraph().addRelation(mediaRel);
-							
+
 							// map to point in time on timeline
 							Integer potStart = time2pot.get(tokInterval.getStartTime());
 							Integer potEnd = time2pot.get(tokInterval.getEndTime());
-							if(potStart != null && potEnd != null) {
+							if (potStart != null && potEnd != null) {
 								STimelineRelation timeRel = SaltFactory.createSTimelineRelation();
 								timeRel.setSource(tok);
 								timeRel.setTarget(getDocument().getDocumentGraph().getTimeline());
 								timeRel.setStart(potStart);
 								timeRel.setEnd(potEnd);
-								
+
 								getDocument().getDocumentGraph().addRelation(timeRel);
 							} else {
-								log.warn(
-										"Could not find overlapped point in time for span {}={} with interval {}-{}",
+								log.warn("Could not find overlapped point in time for span {}={} with interval {}-{}",
 										tier.getName(), tokInterval.getText(), tokInterval.getStartTime(),
 										tokInterval.getEndTime());
 							}
@@ -290,8 +293,10 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 										tier.getName(), spanInterval.getText(), spanInterval.getStartTime(),
 										spanInterval.getEndTime(), prim);
 							} else {
-								SSpan span = getDocument().getDocumentGraph().createSpan(filteredOverlappedToken);
-								span.createAnnotation(null, tier.getName(), spanInterval.getText());
+								if (spanInterval.getText() != null && !spanInterval.getText().isEmpty()) {
+									SSpan span = getDocument().getDocumentGraph().createSpan(filteredOverlappedToken);
+									span.createAnnotation(null, tier.getName(), spanInterval.getText());
+								}
 							}
 						}
 					}
@@ -343,7 +348,7 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 					File mediaFile = new File(originalFile.getParent(),
 							Files.getNameWithoutExtension(originalFile.getPath()) + audioExt);
 					mediaFileDS.setMediaReference(URI.createFileURI(mediaFile.getAbsolutePath()));
-					
+
 					getDocument().getDocumentGraph().addNode(mediaFileDS);
 
 					Map<Double, Integer> time2pot = mapTimeline(grid);
