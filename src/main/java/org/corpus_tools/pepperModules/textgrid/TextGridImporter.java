@@ -51,47 +51,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
 
 /**
- * This is a dummy implementation of a {@link PepperImporter}, which can be used
- * as a template to create your own module from. The current implementation
- * creates a corpus-structure looking like this:
- * 
- * <pre>
- *       c1
- *    /      \
- *   c2      c3
- *  /  \    /  \
- * d1  d2  d3  d4
- * </pre>
- * 
- * For each document d1, d2, d3 and d4 the same document-structure is created.
- * The document-structure contains the following structure and annotations:
- * <ol>
- * <li>primary data</li>
- * <li>tokenization</li>
- * <li>part-of-speech annotation for tokenization</li>
- * <li>information structure annotation via spans</li>
- * <li>anaphoric relation via pointing relation</li>
- * <li>syntactic annotations</li>
- * </ol>
- * This dummy implementation is supposed to give you an impression, of how
- * Pepper works and how you can create your own implementation along that dummy.
- * It further shows some basics of creating a simple Salt model. <br/>
- * <strong>This code contains a lot of TODO's. Please have a look at them and
- * adapt the code for your needs </strong> At least, a list of not used but
- * helpful methods:
- * <ul>
- * <li>the salt model to fill can be accessed via {@link #getSaltProject()}</li>
- * <li>customization properties can be accessed via {@link #getProperties()}
- * </li>
- * <li>a place where resources of this bundle are, can be accessed via
- * {@link #getResources()}</li>
- * </ul>
- * If this is the first time, you are implementing a Pepper module, we strongly
- * recommend, to take a look into the 'Developer's Guide for Pepper modules',
- * you will find on
- * <a href="http://corpus-tools.org/pepper/">http://corpus-tools.org/pepper</a>.
- * 
- * @author Thomas Krause
+ * Thomas Krause <krauseto@hu-berlin.de>
  */
 @Component(name = "TextGridImporterComponent", factory = "PepperImporterComponentFactory")
 public class TextGridImporter extends PepperImporterImpl implements PepperImporter {
@@ -145,14 +105,6 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 	 */
 	public static class TextGridMapper extends PepperMapperImpl {
 
-		/**
-		 * <strong>OVERRIDE THIS METHOD FOR CUSTOMIZATION</strong> <br/>
-		 * If you need to make any adaptations to the corpora like adding further
-		 * meta-annotation, do it here. When whatever you have done successful, return
-		 * the status {@link DOCUMENT_STATUS#COMPLETED}. If anything went wrong return
-		 * the status {@link DOCUMENT_STATUS#FAILED}. <br/>
-		 * In our dummy implementation, we just add a creation date to each corpus.
-		 */
 		@Override
 		public DOCUMENT_STATUS mapSCorpus() {
 			// getScorpus() returns the current corpus object.
