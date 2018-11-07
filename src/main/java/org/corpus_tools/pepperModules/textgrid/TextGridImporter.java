@@ -11,7 +11,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.commons.io.FilenameUtils;
+import com.google.common.io.Files;
+
 import org.corpus_tools.pepper.common.DOCUMENT_STATUS;
 import org.corpus_tools.pepper.common.PepperConfiguration;
 import org.corpus_tools.pepper.impl.PepperImporterImpl;
@@ -45,10 +46,6 @@ import org.praat.TextGrid;
 import org.praat.TextTier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.io.Files;
 
 /**
  * Thomas Krause <krauseto@hu-berlin.de>
