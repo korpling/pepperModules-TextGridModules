@@ -130,7 +130,8 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 					}
 				}
 			}
-			STimeline timeline = getDocument().getDocumentGraph().createTimeline();
+			STimeline timeline = SaltFactory.createSTimeline();
+			getDocument().getDocumentGraph().setTimeline(timeline);
 			Map<Double, Integer> time2pot = new LinkedHashMap<>();
 			for (double timePoint : pots) {
 				timeline.increasePointOfTime();
@@ -285,7 +286,13 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 			log.debug("Importing the file {}.", resource);
 
 			try {
-				PraatObject rootObj = PraatFile.readFromFile(new File(resource.toFileString()), StandardCharsets.UTF_8);
+				PraatObject rootObj = null;
+				try {
+					rootObj = PraatFile.readFromFile(new File(resource.toFileString()), StandardCharsets.UTF_8);
+				} catch(IllegalArgumentException ex) {
+					// try again with UTF-16
+					rootObj = PraatFile.readFromFile(new File(resource.toFileString()), StandardCharsets.UTF_16);
+				}
 
 				if (rootObj instanceof TextGrid) {
 					TextGrid grid = (TextGrid) rootObj;
