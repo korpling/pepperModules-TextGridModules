@@ -201,7 +201,7 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 			}
 		}
 
-		private void mapSpans(TextGrid grid, SMedialDS mediaFile) {
+		private void mapSpans(TextGrid grid, SMedialDS mediaFile, Map<Double, Integer> time2pot) {
 			Map<String, String> annoPrimRel = getProperties().getAnnoPrimRel();
 
 			for (PraatObject gridObject : grid) {
@@ -213,39 +213,46 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 						ListIterator<Interval> intervals = tier.iterator();
 						while (intervals.hasNext()) {
 							Interval spanInterval = intervals.next();
-							// find matching tokens for the interval
-							DataSourceSequence<Double> seq = new DataSourceSequence<>();
-							seq.setDataSource(mediaFile);
-							seq.setStart(spanInterval.getStartTime());
-							seq.setEnd(spanInterval.getEndTime());
 
-							List<SToken> allOverlappedToken = getDocument().getDocumentGraph().getTokensBySequence(seq);
-							List<SToken> filteredOverlappedToken = new ArrayList<>(allOverlappedToken.size());
+							Integer potStart = time2pot.get(spanInterval.getStartTime());
+							Integer potEnd = time2pot.get(spanInterval.getEndTime());
+							if (potStart != null && potEnd != null) {
+								// find matching tokens for the interval
+								DataSourceSequence<Integer> seq = new DataSourceSequence<>();
+								seq.setDataSource(getDocument().getDocumentGraph().getTimeline());
+								seq.setStart(potStart);
+								seq.setEnd(potEnd);
 
-							for (SToken t : allOverlappedToken) {
-								List<DataSourceSequence> overlappedDS = getDocument().getDocumentGraph()
-										.getOverlappedDataSourceSequence(t, SALT_TYPE.STEXT_OVERLAPPING_RELATION);
-								if (overlappedDS != null && !overlappedDS.isEmpty()) {
-									for (DataSourceSequence textSeq : overlappedDS) {
-										if (seq.getDataSource() instanceof STextualDS) {
-											STextualDS ds = (STextualDS) textSeq.getDataSource();
-											if (prim.equals(ds.getName())) {
-												filteredOverlappedToken.add(t);
+								List<SToken> allOverlappedToken = getDocument().getDocumentGraph()
+										.getTokensBySequence(seq);
+								List<SToken> filteredOverlappedToken = new ArrayList<>(allOverlappedToken.size());
+
+								for (SToken t : allOverlappedToken) {
+									List<DataSourceSequence> overlappedDS = getDocument().getDocumentGraph()
+											.getOverlappedDataSourceSequence(t, SALT_TYPE.STEXT_OVERLAPPING_RELATION);
+									if (overlappedDS != null && !overlappedDS.isEmpty()) {
+										for (DataSourceSequence textSeq : overlappedDS) {
+											if (textSeq.getDataSource() instanceof STextualDS) {
+												STextualDS ds = (STextualDS) textSeq.getDataSource();
+												if (prim.equals(ds.getName())) {
+													filteredOverlappedToken.add(t);
+												}
 											}
 										}
 									}
 								}
-							}
 
-							if (filteredOverlappedToken.isEmpty()) {
-								log.warn(
-										"Could not find overlapped token for span {}={} with interval {}-{} for primary text {}",
-										tier.getName(), spanInterval.getText(), spanInterval.getStartTime(),
-										spanInterval.getEndTime(), prim);
-							} else {
-								if (spanInterval.getText() != null && !spanInterval.getText().isEmpty()) {
-									SSpan span = getDocument().getDocumentGraph().createSpan(filteredOverlappedToken);
-									span.createAnnotation(null, tier.getName(), spanInterval.getText());
+								if (filteredOverlappedToken.isEmpty()) {
+									log.warn(
+											"Could not find overlapped token for span {}={} with interval {}-{} for primary text {}",
+											tier.getName(), spanInterval.getText(), spanInterval.getStartTime(),
+											spanInterval.getEndTime(), prim);
+								} else {
+									if (spanInterval.getText() != null && !spanInterval.getText().isEmpty()) {
+										SSpan span = getDocument().getDocumentGraph()
+												.createSpan(filteredOverlappedToken);
+										span.createAnnotation(null, tier.getName(), spanInterval.getText());
+									}
 								}
 							}
 						}
@@ -289,7 +296,7 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 				PraatObject rootObj = null;
 				try {
 					rootObj = PraatFile.readFromFile(new File(resource.toFileString()), StandardCharsets.UTF_8);
-				} catch(IllegalArgumentException ex) {
+				} catch (IllegalArgumentException ex) {
 					// try again with UTF-16
 					rootObj = PraatFile.readFromFile(new File(resource.toFileString()), StandardCharsets.UTF_16);
 				}
@@ -309,7 +316,7 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 
 					Map<Double, Integer> time2pot = mapTimeline(grid);
 					mapTokens(grid, mediaFileDS, time2pot);
-					mapSpans(grid, mediaFileDS);
+					mapSpans(grid, mediaFileDS, time2pot);
 
 				}
 			} catch (Exception ex) {

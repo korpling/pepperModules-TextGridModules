@@ -32,7 +32,7 @@ public class TextGridImporterProperties extends PepperModuleProperties {
 	public Map<String, String> getAnnoPrimRel() {
 		Multimap<String, String> prim2anno = HashMultimap.create();
 		String rawValue = (String) getProperty(PROP_ANNO_PRIM_REL).getValue();
-		for (String def : Splitter.on(',').trimResults().omitEmptyStrings().split(rawValue)) {
+		for (String def : Splitter.on(';').trimResults().omitEmptyStrings().split(rawValue)) {
 			// split before = and values after
 			List<String> keyValue = Splitter.on('=').limit(2).splitToList(def);
 			if (keyValue.size() == 2) {
