@@ -190,9 +190,10 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 
 								getDocument().getDocumentGraph().addRelation(timeRel);
 							} else {
-								log.warn("Could not find overlapped point in time for span {}={} with interval {}-{}",
-										tier.getName(), tokInterval.getText(), tokInterval.getStartTime(),
-										tokInterval.getEndTime());
+								log.warn(
+										"{}: Could not find overlapped point in time for span {}={} with interval {}-{}",
+										getDocument().getName(), tier.getName(), tokInterval.getText(),
+										String.format("", tokInterval.getStartTime(), tokInterval.getEndTime()));
 							}
 						}
 						primaryText.setText(text.toString());
@@ -216,7 +217,8 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 
 							Integer potStart = time2pot.get(spanInterval.getStartTime());
 							Integer potEnd = time2pot.get(spanInterval.getEndTime());
-							if (potStart != null && potEnd != null) {
+							if (spanInterval.getText() != null && !spanInterval.getText().isEmpty() && potStart != null
+									&& potEnd != null) {
 								// find matching tokens for the interval
 								DataSourceSequence<Integer> seq = new DataSourceSequence<>();
 								seq.setDataSource(getDocument().getDocumentGraph().getTimeline());
@@ -243,10 +245,21 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 								}
 
 								if (filteredOverlappedToken.isEmpty()) {
-									log.warn(
-											"Could not find overlapped token for span {}={} with interval {}-{} for primary text {}",
-											tier.getName(), spanInterval.getText(), spanInterval.getStartTime(),
-											spanInterval.getEndTime(), prim);
+									if (prim != null && !prim.isEmpty()) {
+										log.warn(
+												"{}: Could not find overlapped token for span {}=\"{}\" on primary text {} "
+														+ "(interval {})",
+												getDocument().getName(), tier.getName(), spanInterval.getText(), prim,
+												String.format("%.2f-%.2f", spanInterval.getStartTime(),
+														spanInterval.getEndTime()));
+									} else {
+										log.warn(
+												"{}: Could not find overlapped token for span {}=\"{}\" "
+														+ "(interval {})",
+												getDocument().getName(), tier.getName(), spanInterval.getText(),
+												String.format("%.2f-%.2f", spanInterval.getStartTime(),
+														spanInterval.getEndTime()));
+									}
 								} else {
 									if (spanInterval.getText() != null && !spanInterval.getText().isEmpty()) {
 										SSpan span = getDocument().getDocumentGraph()
@@ -270,7 +283,10 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 		 * too complex. We just show how to create a simple document-structure in Salt,
 		 * in following steps:
 		 * <ol>
-		 * <li>creating primary data</li>
+		 * <li>creating primary data</li> log.warn("Could not find overlapped point in
+		 * time for span {}={} ({})", tier.getName(), tokInterval.getText(),
+		 * String.format("%.2f -- %.2f", tokInterval.getStartTime(),
+		 * tokInterval.getEndTime()));
 		 * <li>creating tokenization</li>
 		 * <li>creating part-of-speech annotation for tokenization</li>
 		 * <li>creating information structure annotation via spans</li>
