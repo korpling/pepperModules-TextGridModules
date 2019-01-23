@@ -145,7 +145,6 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 			Set<String> annoTiers = anno2prim.keySet();
 			Set<String> primaryTiers = new HashSet<>(anno2prim.values());
 
-			getDocument().getDocumentGraph().addNode(mediaFile);
 
 			for (PraatObject gridObject : grid) {
 				if (gridObject instanceof IntervalTier) {
@@ -169,14 +168,16 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 
 							SToken tok = getDocument().getDocumentGraph().createToken(primaryText, tokStart, tokEnd);
 
-							// map time of interval to media file
-							SMedialRelation mediaRel = SaltFactory.createSMedialRelation();
-							mediaRel.setSource(tok);
-							mediaRel.setTarget(mediaFile);
-							mediaRel.setStart(tokInterval.getStartTime());
-							mediaRel.setEnd(tokInterval.getEndTime());
-
-							getDocument().getDocumentGraph().addRelation(mediaRel);
+							if(mediaFile != null) {
+								// map time of interval to media file
+								SMedialRelation mediaRel = SaltFactory.createSMedialRelation();
+								mediaRel.setSource(tok);
+								mediaRel.setTarget(mediaFile);
+								mediaRel.setStart(tokInterval.getStartTime());
+								mediaRel.setEnd(tokInterval.getEndTime());
+	
+								getDocument().getDocumentGraph().addRelation(mediaRel);
+							}
 
 							// map to point in time on timeline
 							Integer potStart = time2pot.get(tokInterval.getStartTime());
@@ -202,7 +203,7 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 			}
 		}
 
-		private void mapSpans(TextGrid grid, SMedialDS mediaFile, Map<Double, Integer> time2pot) {
+		private void mapSpans(TextGrid grid, Map<Double, Integer> time2pot) {
 			Map<String, String> annoPrimRel = getProperties().getAnnoPrimRel();
 
 			for (PraatObject gridObject : grid) {
@@ -319,20 +320,25 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 
 				if (rootObj instanceof TextGrid) {
 					TextGrid grid = (TextGrid) rootObj;
-					SMedialDS mediaFileDS = SaltFactory.createSMedialDS();
 					// link actual file to media file, assume they have the same name but ends with
 					// an audio file extension
 					String audioExt = getProperties().getAudioExtension();
 					File originalFile = new File(getResourceURI().toFileString());
 					File mediaFile = new File(originalFile.getParent(),
 							Files.getNameWithoutExtension(originalFile.getPath()) + audioExt);
-					mediaFileDS.setMediaReference(URI.createFileURI(mediaFile.getAbsolutePath()));
-
-					getDocument().getDocumentGraph().addNode(mediaFileDS);
+					
+					SMedialDS mediaFileDS = null;
+					
+					if(mediaFile.isFile()) {
+						mediaFileDS = SaltFactory.createSMedialDS();
+						mediaFileDS.setMediaReference(URI.createFileURI(mediaFile.getAbsolutePath()));
+						getDocument().getDocumentGraph().addNode(mediaFileDS);
+					}
+					
 
 					Map<Double, Integer> time2pot = mapTimeline(grid);
 					mapTokens(grid, mediaFileDS, time2pot);
-					mapSpans(grid, mediaFileDS, time2pot);
+					mapSpans(grid, time2pot);
 
 				}
 			} catch (Exception ex) {
