@@ -17,16 +17,21 @@ public class TextGridImporterProperties extends PepperModuleProperties {
 	public static final String PROP_ANNO_PRIM_REL = "annoPrimRel";
 	public static final String PROP_MAP_UNKNOWN_AS_TOKEN = "mapUnknownAsToken";
 	public static final String PROP_AUDIO_EXTENSION = "audioExtension";
+	public static final String PROP_SEARCH_TOKENS = "searchTokens";
 
 	public TextGridImporterProperties() {
 		addProperty(new PepperModuleProperty<>(PROP_ANNO_PRIM_REL, String.class,
-				"Defines which primary text tiers are the basis of which annotation tiers, therefor a comma seperated list of primary text tiers, followed by a list of all annotations that refer to the primary tier, is needed. A possible key-value set could be: key='shortAnnoPrimRel', value='primText1={anno1, anno2}, primText2={anno3}' (key: 'annoPrimRel', default is 'null').",
+				"Defines which primary text tiers are the basis of which annotation tiers, therefor a comma seperated list of primary text tiers, followed by a list of all annotations that refer to the primary tier, is needed. A possible key-value set could be: key='shortAnnoPrimRel', value='primText1={anno1, anno2};primText2={anno3}' (key: 'annoPrimRel', default is 'null').",
 				"", false));
 		addProperty(new PepperModuleProperty<>(PROP_MAP_UNKNOWN_AS_TOKEN, Boolean.class,
 				"If set to true, annotation layer which are not configured via the annoPrimRel parameter are mapped as token.",
 				true, false));
 		addProperty(new PepperModuleProperty<>(PROP_AUDIO_EXTENSION, String.class,
 				"Extension of the linked audio files", ".wav"));
+		addProperty(PepperModuleProperty.create()
+				.withName(PROP_SEARCH_TOKENS)
+				.withType(Boolean.class).withDescription("If no corresponding token can be found on the explicitly mentioned tier, an additional search on that tier is executed. This captures cases when the annotation boundaries do not exactly match with the token boundaries, but are within the interval of the respective token.")
+				.withDefaultValue(false).build());
 	}
 
 	public Map<String, String> getAnnoPrimRel() {
@@ -59,5 +64,9 @@ public class TextGridImporterProperties extends PepperModuleProperties {
 	
 	public boolean isMapUnknownAsToken() {
 		return (Boolean) getProperty(PROP_MAP_UNKNOWN_AS_TOKEN).getValue();
+	}
+	
+	public boolean searchTokens() {
+		return (Boolean) getProperty(PROP_SEARCH_TOKENS).getValue();
 	}
 }

@@ -4,14 +4,14 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-
-import com.google.common.io.Files;
+import java.util.function.Predicate;
 
 import org.corpus_tools.pepper.common.DOCUMENT_STATUS;
 import org.corpus_tools.pepper.common.PepperConfiguration;
@@ -30,9 +30,11 @@ import org.corpus_tools.salt.common.SMedialDS;
 import org.corpus_tools.salt.common.SMedialRelation;
 import org.corpus_tools.salt.common.SSpan;
 import org.corpus_tools.salt.common.STextualDS;
+import org.corpus_tools.salt.common.STextualRelation;
 import org.corpus_tools.salt.common.STimeline;
 import org.corpus_tools.salt.common.STimelineRelation;
 import org.corpus_tools.salt.common.SToken;
+import org.corpus_tools.salt.core.SRelation;
 import org.corpus_tools.salt.graph.Identifier;
 import org.corpus_tools.salt.util.DataSourceSequence;
 import org.eclipse.emf.common.util.URI;
@@ -46,6 +48,8 @@ import org.praat.TextGrid;
 import org.praat.TextTier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.io.Files;
 
 /**
  * Thomas Krause <krauseto@hu-berlin.de>
@@ -149,7 +153,6 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 			for (PraatObject gridObject : grid) {
 				if (gridObject instanceof IntervalTier) {
 					IntervalTier tier = (IntervalTier) gridObject;
-
 					if (primaryTiers.contains(tier.getName())
 							|| (getProperties().isMapUnknownAsToken() && !annoTiers.contains(tier.getName()))) {
 						StringBuilder text = new StringBuilder();
@@ -211,13 +214,12 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 			for (PraatObject gridObject : grid) {
 				if (gridObject instanceof IntervalTier) {
 					IntervalTier tier = (IntervalTier) gridObject;
-
+					boolean searchTokens = ((TextGridImporterProperties)getProperties()).searchTokens();
 					String prim = annoPrimRel.get(tier.getName());
 					if (prim != null) {
 						ListIterator<Interval> intervals = tier.iterator();
 						while (intervals.hasNext()) {
 							Interval spanInterval = intervals.next();
-
 							Integer potStart = time2pot.get(spanInterval.getStartTime());
 							Integer potEnd = time2pot.get(spanInterval.getEndTime());
 							if (spanInterval.getText() != null && !spanInterval.getText().isEmpty() && potStart != null
@@ -241,10 +243,43 @@ public class TextGridImporter extends PepperImporterImpl implements PepperImport
 												STextualDS ds = (STextualDS) textSeq.getDataSource();
 												if (prim.equals(ds.getName())) {
 													filteredOverlappedToken.add(t);
+												} else if (searchTokens) {
+													Iterator<STextualDS> itDS = getDocument().getDocumentGraph().getTextualDSs().iterator();
+													STextualDS targetDS = null;
+													while ((targetDS == null || !prim.equals(targetDS.getName())) && itDS.hasNext()) {
+														targetDS = itDS.next();
+													}
+													if (targetDS != null && prim.equals(targetDS.getName())) {
+														Iterator<SToken> potentialTargetTokens = getDocument().getDocumentGraph().getSortedTokenByText(
+																getDocument().getDocumentGraph().getTokensBySequence(new DataSourceSequence<Number>(targetDS, 0, targetDS.getText().length()))).iterator();
+														List<SToken> annoTargets = new ArrayList<>();
+														SToken tok = null;
+														STimelineRelation tRel = null;
+														int currStart = 0;
+														int currEnd = 0;
+														while (potentialTargetTokens.hasNext() && currStart < potEnd) {
+															tok = potentialTargetTokens.next();
+															tRel = (STimelineRelation) tok.getOutRelations().stream().filter(new Predicate<SRelation>() {
+																@Override
+																public boolean test(SRelation r) {
+																	return r instanceof STimelineRelation;
+																}
+															}).findFirst().get(); 
+															currStart = tRel.getStart();
+															currEnd = tRel.getEnd();
+															if (currStart >= potStart && currStart < potEnd && currEnd <= potEnd) {
+																annoTargets.add(tok);
+															}															
+														}
+														if (log.isDebugEnabled()) {
+															log.debug("[" + prim + "|" + tier.getName() + "]" + "Searching: " + potStart + " to " + potEnd + ", found " + annoTargets.size() + " tokens.");
+														}
+														filteredOverlappedToken.addAll(annoTargets);
+													}
 												}
-											}
+											} 
 										}
-									}
+									} 
 								}
 
 								if (filteredOverlappedToken.isEmpty()) {
