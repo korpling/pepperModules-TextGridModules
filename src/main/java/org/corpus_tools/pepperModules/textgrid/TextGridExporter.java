@@ -1,31 +1,22 @@
 package org.corpus_tools.pepperModules.textgrid;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Map.Entry;
 
-import org.apache.commons.lang3.StringUtils;
 import org.corpus_tools.pepper.common.DOCUMENT_STATUS;
 import org.corpus_tools.pepper.common.PepperConfiguration;
 import org.corpus_tools.pepper.impl.PepperExporterImpl;
 import org.corpus_tools.pepper.impl.PepperMapperImpl;
 import org.corpus_tools.pepper.modules.PepperExporter;
 import org.corpus_tools.pepper.modules.PepperMapper;
-import org.corpus_tools.pepper.modules.PepperExporter.EXPORT_MODE;
 import org.corpus_tools.pepper.modules.exceptions.PepperModuleDataException;
-import org.corpus_tools.pepperModules.textgrid.model.TextGridItem;
 import org.corpus_tools.salt.common.SDocument;
 import org.corpus_tools.salt.common.SDocumentGraph;
 import org.corpus_tools.salt.common.SMedialRelation;
@@ -39,6 +30,11 @@ import org.corpus_tools.salt.graph.Identifier;
 import org.corpus_tools.salt.util.DataSourceSequence;
 import org.eclipse.emf.common.util.URI;
 import org.osgi.service.component.annotations.Component;
+import org.praat.Interval;
+import org.praat.IntervalTier;
+import org.praat.PraatFile;
+import org.praat.TextGrid;
+import org.praat.Tier;
 
 @Component(name = "TextGridExporterComponent", factory = "PepperExporterComponentFactory")
 public class TextGridExporter extends PepperExporterImpl implements PepperExporter {
@@ -68,15 +64,13 @@ public class TextGridExporter extends PepperExporterImpl implements PepperExport
 		private static final String ERR_NO_TIME_INFORMATION = "No medial relation was detected, time values cannot be computed.";
 		private static final String ERR_IO = "An error occured when writing the textgrid file.";
 		
-		private List<TextGridItem> items = null;
 		private Map<SNode, SMedialRelation> sNode2mRel = null;
-		private Map<String, TextGridItem> tiername2Item = null;
+		private Map<String, List<Interval>> tiername2Intervals = null;
 		
 		public TextGridExportMapper() {
 			super();
-			items = new ArrayList<>();
 			sNode2mRel = new HashMap<>();
-			tiername2Item = new HashMap<>();
+			tiername2Intervals = new HashMap<>();
 		}
 		
 		@Override
@@ -99,14 +93,14 @@ public class TextGridExporter extends PepperExporterImpl implements PepperExport
 					SMedialRelation mRel = getMedialRelation(tokens.get(0));
 					start = mRel.getStart();
 				}
-				TextGridItem tier = getTier(tierName, start);
+				List<Interval> intervals = getTier(tierName);
 				for (SToken sTok : tokens) {
 					SMedialRelation mRel = getMedialRelation(sTok);
-					tier.add(mRel.getStart(), mRel.getEnd(), documentGraph.getText(sTok));
+					intervals.add(new Interval(mRel.getStart(), mRel.getEnd(), documentGraph.getText(sTok)));
 					for (SAnnotation sAnno : sTok.getAnnotations()) {
 						String annoName = sAnno.getName();
-						TextGridItem annoTier = getTier(annoName, mRel.getStart());
-						annoTier.add(mRel.getStart(), mRel.getEnd(), sAnno.getValue_STEXT());
+						List<Interval> annoTier = getTier(annoName);
+						annoTier.add(new Interval(mRel.getStart(), mRel.getEnd(), sAnno.getValue_STEXT()));
 					}
 				}
 			}
@@ -117,7 +111,7 @@ public class TextGridExporter extends PepperExporterImpl implements PepperExport
 			if (mRel != null) {
 				return mRel;
 			}
-			for (SRelation rel : node.getOutRelations()) {
+			for (SRelation<?, ?> rel : node.getOutRelations()) {
 				if (rel instanceof SMedialRelation) {
 					mRel = (SMedialRelation) rel;
 					break;
@@ -130,48 +124,47 @@ public class TextGridExporter extends PepperExporterImpl implements PepperExport
 			return mRel;
 		}
 		
-		private TextGridItem getTier(String name, double start) {
-			TextGridItem tier = tiername2Item.get(name);
-			if (tier == null) {
-				tier = new TextGridItem(start, -1.0, name, tiername2Item.size());
-				tiername2Item.put(name, tier);
+		private List<Interval> getTier(String name) {
+			List<Interval> intervals = tiername2Intervals.get(name);
+			if (intervals == null) {
+				intervals = new ArrayList<Interval>();
+				tiername2Intervals.put(name, intervals);
 			}
-			return tier;
+			return intervals;
 		}
 
 		private void mapSpanAnnotations() {
 			SDocumentGraph documentGraph = getDocument().getDocumentGraph();
-			Set<String> reorganizeNames = new HashSet<>();
 			for (SSpan sSpan : documentGraph.getSpans()) {
 				List<SToken> tokens = documentGraph.getSortedTokenByText( documentGraph.getOverlappedTokens(sSpan) );
 				double start = getMedialRelation(tokens.get(0)).getStart();				
 				double end = getMedialRelation(tokens.get( tokens.size() - 1 )).getEnd();
 				for (SAnnotation sAnno : sSpan.getAnnotations()) {
 					String annoName = sAnno.getName();
-					TextGridItem annoTier = getTier(annoName, start);
-					annoTier.add(start, end, sAnno.getValue_STEXT());
-					reorganizeNames.add(annoName);
+					List<Interval> annoTier = getTier(annoName);
+					annoTier.add(new Interval(start, end, sAnno.getValue_STEXT()));
 				}
-			}
-			for (String name : reorganizeNames) {
-				tiername2Item.get(name).reorganize();
 			}
 		}
 
 		private void write() {
-			StringBuilder builder = new StringBuilder();
-			TextGridItem.writeHeader(builder, tiername2Item.values());
+			List<Tier> tiers = new ArrayList<>(); {
+				for (Entry<String, List<Interval>> entry : tiername2Intervals.entrySet()) {
+					String name = entry.getKey();
+					List<Interval> intervals = entry.getValue();
+					IntervalTier tier = new IntervalTier(name, intervals);
+					tiers.add(tier);				
+				}
+			}
+			TextGrid textgrid = new TextGrid(getDocument().getName(), tiers);
 			File outputFile = null;
 			if (getResourceURI().toFileString() != null) {
 				outputFile = new File(getResourceURI().toFileString());
 			} else {
 				outputFile = new File(getResourceURI().toString());
 			}
-			OutputStream outStream;
 			try {
-				outStream = new FileOutputStream(outputFile);
-				outStream.write(builder.toString().getBytes());
-				outStream.close();
+				PraatFile.writeText(textgrid, outputFile);
 			} catch (IOException e) {
 				throw new PepperModuleDataException(this, ERR_IO);
 			}
