@@ -1,9 +1,7 @@
 package org.corpus_tools.pepperModules.textgrid;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +33,8 @@ import org.praat.IntervalTier;
 import org.praat.PraatFile;
 import org.praat.TextGrid;
 import org.praat.Tier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component(name = "TextGridExporterComponent", factory = "PepperExporterComponentFactory")
 public class TextGridExporter extends PepperExporterImpl implements PepperExporter {
@@ -59,6 +59,8 @@ public class TextGridExporter extends PepperExporterImpl implements PepperExport
 	}
 	
 	public static class TextGridExportMapper extends PepperMapperImpl implements PepperMapper {
+		
+		private static final Logger logger = LoggerFactory.getLogger(TextGridExportMapper.class);
 		
 		private static final String ERR_NO_DATA = "No data was provided (document or document graph is NULL).";
 		private static final String ERR_NO_TIME_INFORMATION = "No medial relation was detected, time values cannot be computed.";
@@ -89,21 +91,44 @@ public class TextGridExporter extends PepperExporterImpl implements PepperExport
 			for (STextualDS ds : documentGraph.getTextualDSs()) {
 				String tierName = ds.getName();
 				List<SToken> tokens = documentGraph.getSortedTokenByText( documentGraph.getTokensBySequence(new DataSourceSequence<Number>(ds, ds.getStart(), ds.getEnd())) );
-				double start; {
-					SMedialRelation mRel = getMedialRelation(tokens.get(0));
-					start = mRel.getStart();
-				}
 				List<Interval> intervals = getTier(tierName);
 				for (SToken sTok : tokens) {
 					SMedialRelation mRel = getMedialRelation(sTok);
-					intervals.add(new Interval(mRel.getStart(), mRel.getEnd(), documentGraph.getText(sTok)));
-					for (SAnnotation sAnno : sTok.getAnnotations()) {
-						String annoName = sAnno.getName();
-						List<Interval> annoTier = getTier(annoName);
-						annoTier.add(new Interval(mRel.getStart(), mRel.getEnd(), sAnno.getValue_STEXT()));
+					String text = documentGraph.getText(sTok);
+					if (check(tierName, mRel.getStart(), mRel.getEnd(), text)) {
+						intervals.add(new Interval(mRel.getStart(), mRel.getEnd(), text));
+						for (SAnnotation sAnno : sTok.getAnnotations()) {
+							String annoName = sAnno.getName();
+							List<Interval> annoTier = getTier(annoName);
+							annoTier.add(new Interval(mRel.getStart(), mRel.getEnd(), sAnno.getValue_STEXT()));
+						}
 					}
 				}
 			}
+		}
+		
+		private boolean check(String tierName, Double start, Double end, String text) {
+			boolean empty = text== null || text.isEmpty();
+			if (empty) {
+				logger.warn(getDocument().getName() + ":Interval is skipped due to missing text value: " + tierName + ":" + start + "-" + end);
+				return false;
+			}
+			boolean validStart = start != null;
+			if (!validStart) {
+				logger.warn(getDocument().getName() + ":Interval is skipped due to invalid start value: " + tierName + ":" + start + "-" + end + " (" + text + ")");
+				return false;
+			}
+			boolean validEnd = end != null;
+			if (!validEnd) {
+				logger.warn(getDocument().getName() + ":Interval is skipped due to invalid end value: " + tierName + ":" + start + "-" + end + " (" + text + ")");
+				return false;
+			}
+			boolean validTimeValues = end > start;
+			if (!validTimeValues) {
+				logger.warn(getDocument().getName() + ":Interval is skipped due to invalid time values: " + tierName + ":" + start + "-" + end + " (" + text + ")");
+				return false;
+			}
+			return true; 
 		}
 		
 		private SMedialRelation getMedialRelation(SNode node) {
@@ -137,12 +162,15 @@ public class TextGridExporter extends PepperExporterImpl implements PepperExport
 			SDocumentGraph documentGraph = getDocument().getDocumentGraph();
 			for (SSpan sSpan : documentGraph.getSpans()) {
 				List<SToken> tokens = documentGraph.getSortedTokenByText( documentGraph.getOverlappedTokens(sSpan) );
-				double start = getMedialRelation(tokens.get(0)).getStart();				
-				double end = getMedialRelation(tokens.get( tokens.size() - 1 )).getEnd();
+				Double start = getMedialRelation(tokens.get(0)).getStart();				
+				Double end = getMedialRelation(tokens.get( tokens.size() - 1 )).getEnd();
 				for (SAnnotation sAnno : sSpan.getAnnotations()) {
 					String annoName = sAnno.getName();
 					List<Interval> annoTier = getTier(annoName);
-					annoTier.add(new Interval(start, end, sAnno.getValue_STEXT()));
+					String value = sAnno.getValue_STEXT();
+					if (check(annoName, start, end, value)) {
+						annoTier.add(new Interval(start, end, sAnno.getValue_STEXT()));
+					}
 				}
 			}
 		}
